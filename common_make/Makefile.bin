@@ -1,0 +1,38 @@
+CXXFLAGS = -Wall -g -O2 -D_GNU_SOURCE
+
+INC = -I./include
+LIB = -lpthread -lm
+
+SOURCES_FILES_CPP=$(wildcard *.cpp) \
+				  $(wildcard ./src/*.cpp)
+Objs = $(patsubst %.cpp,%.o,$(SOURCES_FILES_CPP))
+
+DEPDIR = .deps
+ALLDEPDIR = .deps/src
+
+Cpps = $(Objs:%.o=%.cpp)
+Deps = $(Objs:%.o=$(DEPDIR)/%.Po)
+
+Target = app_foo
+
+all : $(Target)
+
+include $(Deps)
+
+$(Deps): %.Po :
+	@mkdir -p $(ALLDEPDIR)
+	@touch $@
+
+.cpp.o:
+	@mkdir -p $(ALLDEPDIR)
+	if $(CXX) $(CXXFLAGS) $(INC) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+
+$(Target) : $(Objs)
+	$(CXX) $(Objs) -o $@ $(CXXFLAGS) $(INC) $(LIB)
+
+clean : 
+	$(RM) $(Objs) $(Target)
+
+distclean : 
+	$(RM) $(Objs) $(Deps) $(Target)

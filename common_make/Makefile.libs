@@ -1,0 +1,40 @@
+CXXFLAGS = -Wall -O2 -g -D_GNU_SOURCE
+
+INC= -I./ -I./include
+
+SOURCES_FILES_CPP=$(wildcard src/*.cpp)
+OBJ_EXT = $(patsubst %.cpp,%.o,$(SOURCES_FILES_CPP))
+
+DEPDIR = .deps
+ALLDEPDIR = .deps/src
+
+LIB_DIR = ./libs/
+LIB_TARGET = $(LIB_DIR)libfoo.a
+
+Cpps = $(OBJ_EXT:%.o=%.cpp)
+Deps = $(OBJ_EXT:%.o=$(DEPDIR)/%.Po)
+
+all : $(LIB_TARGET) 
+
+include $(Deps)
+
+$(Deps): %.Po :
+	@mkdir -p $(ALLDEPDIR)
+	@touch $@
+
+.cpp.o:
+	@mkdir -p $(ALLDEPDIR)
+	if $(CXX) $(CXXFLAGS) $(INC) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+
+$(LIB_TARGET) : $(OBJ_EXT)
+	@$(RM) $(LIB_TARGET)
+	@mkdir -p $(LIB_DIR)
+	ar cru $(LIB_TARGET) $(OBJ_EXT)
+	@ranlib $(LIB_TARGET)
+
+clean : 
+	$(RM) $(OBJ_EXT) $(LIB_TARGET)
+
+distclean : 
+	$(RM) $(OBJ_EXT) $(Deps) $(LIB_TARGET)
